@@ -30,7 +30,8 @@ create table LEKAREN
 create table JE_V_ZMLUVE
 (
     POISTOVNA_ID    int not null,
-    LEKAREN_ID      int
+    LEKAREN_ID      int,
+    CHECK ( LEKAREN_ID > 0 )
 );
 
 create table VYKAZ
@@ -69,7 +70,8 @@ create table LIEK
     DENNA_DAVKA      VARCHAR(70),
     UCINNA_LATKA     VARCHAR(150),
     EXPIRACIA        DATE,
-    VEDLAJSIE_UCINKY VARCHAR(150)
+    VEDLAJSIE_UCINKY VARCHAR(150),
+    CHECK ( CENA <= 99999.99 )
 );
 
 CREATE TABLE NA_PREDPIS
@@ -86,14 +88,16 @@ create table HRADI_DOPLATOK
 (
     ID_LIEK         int not null,
     POISTOVNA       int not null,
-    VYSKA_DOPLATKU  DECIMAL(5, 2)
+    VYSKA_DOPLATKU  DECIMAL(5, 2),
+    CHECK ( VYSKA_DOPLATKU <= 99999.99 )
 );
 
 create table POCET_LIEKOV_NA_SKLADE
 (
     ID_LIEK         int not null,
     ID_SKLAD        int not null ,
-    POCET_LIEKOV    NUMBER(4)
+    POCET_LIEKOV    NUMBER(4),
+    CHECK ( POCET_LIEKOV <= 4 )
 );
 
 create table ZDRAVOTNA_POISTOVNA
