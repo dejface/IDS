@@ -3,4 +3,5 @@ Vaším úkolem je vývoj IS lékárny. Lékárna vydává občanům léky jak n
 <br/>
 <br/>
 <br/>
-1. časť (ER diagram) - 4/5
+Projekt 1. část - Datový model (ERD), model případů užití a obhajoba modelů - 4/5
+Projekt 2. část - SQL skript pro vytvoření základních objektů schématu databáze - 4/5
