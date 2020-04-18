@@ -182,7 +182,7 @@ end;
 
 INSERT INTO SKLAD(MNOZSTVO_TOVARU_NA_SKLADE, KAPACITA) VALUES(57,2250);
 INSERT INTO SKLAD(MNOZSTVO_TOVARU_NA_SKLADE, KAPACITA) VALUES(380,2250);
-INSERT INTO SKLAD(MNOZSTVO_TOVARU_NA_SKLADE, KAPACITA) VALUES(2250,2250);
+INSERT INTO SKLAD(MNOZSTVO_TOVARU_NA_SKLADE, KAPACITA) VALUES(2240,2250);
 
 INSERT INTO LEKAREN(ULICA, SUPISNE_CISLO, ORIENTACNE_CISLO, PSC, MESTO, TELEFONNE_CISLO, DATUM_INVENTURY,SKLAD_ID) VALUES('Antona Bernoláka', 2135, 2, 01001, 'Žilina','+421901961271',TO_DATE('01.03.2020', 'dd.mm.yyyy'),1);
 INSERT INTO LEKAREN(ULICA, SUPISNE_CISLO, ORIENTACNE_CISLO, PSC, MESTO, TELEFONNE_CISLO, DATUM_INVENTURY,SKLAD_ID) VALUES('Legionárska', 1459, 19, 91101, 'Trenčín','+421901961504',TO_DATE('10.03.2020', 'dd.mm.yyyy'),2);
@@ -243,18 +243,18 @@ INSERT INTO POCET_LIEKOV_NA_SKLADE(ID_LIEK, ID_SKLAD, POCET_LIEKOV) VALUES(3,1,2
 INSERT INTO POCET_LIEKOV_NA_SKLADE(ID_LIEK, ID_SKLAD, POCET_LIEKOV) VALUES(1,2,150);
 INSERT INTO POCET_LIEKOV_NA_SKLADE(ID_LIEK, ID_SKLAD, POCET_LIEKOV) VALUES(2,2,80);
 INSERT INTO POCET_LIEKOV_NA_SKLADE(ID_LIEK, ID_SKLAD, POCET_LIEKOV) VALUES(3,2,150);
-INSERT INTO POCET_LIEKOV_NA_SKLADE(ID_LIEK, ID_SKLAD, POCET_LIEKOV) VALUES(1,3,1250);
+INSERT INTO POCET_LIEKOV_NA_SKLADE(ID_LIEK, ID_SKLAD, POCET_LIEKOV) VALUES(1,3,1240);
 INSERT INTO POCET_LIEKOV_NA_SKLADE(ID_LIEK, ID_SKLAD, POCET_LIEKOV) VALUES(2,3,100);
 INSERT INTO POCET_LIEKOV_NA_SKLADE(ID_LIEK, ID_SKLAD, POCET_LIEKOV) VALUES(3,3,900);
 
 -- -- -- -- -- -- -- -- -- -- -- PREDVEDENIE TRIGGEROV -- -- -- -- -- -- -- -- -- -- -- -- --
--- Predvedenie triggeru 1, ktory vygeneruje ID poistovne automaticky
--- na zaklade dat vyssie by malo byt ID VSZP = 1, DOVERA = 2, UNION = 3
+-- Predvedenie triggeru 1, ktorý vygeneruje ID poistovne automaticky
+-- na základe dát vyššie by malo byt ID VSZP = 1, DOVERA = 2, UNION = 3
 SELECT ID_POISTOVNE, NAZOV  FROM ZDRAVOTNA_POISTOVNA
 ORDER BY ID_POISTOVNE;
 
 -- Predvedenie triggeru 2
---Pri pokuse o vlozenie polozky do tabulky liek sa vyhodi application error kvoli lieku po expiracii
+--Pri pokuse o vloženie položky do tabuľky liek sa vyhodí application error kvoli lieku po expiracií
 --INSERT INTO LIEK(NAZOV, CENA, DENNA_DAVKA, UCINNA_LATKA, EXPIRACIA, VEDLAJSIE_UCINKY) VALUES ('Šumivé tablety',2.99,'1 šumivá tableta denne','horčík a vitamín B6',TO_DATE('20.03.2019','dd.mm.yyyy'),'laxatívne účinky');
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -300,7 +300,7 @@ WHERE S.ID_LIEK IN (SELECT L.CISLO_LIEKU FROM LIEK L WHERE L.CISLO_LIEKU = 1)
 ORDER BY S.ID_SKLAD;
 
 --1x prediát EXISTS
--- Vypíše lieky, ktoré boli kúpene s cenou väčšou ako 3€
+-- Vypíše lieky, ktoré boli kúpené s cenou väčšou ako 3€
 SELECT N.LIEK_ID, N.NAKUP_ID
 FROM SUCAST_NAKUPU N
 WHERE EXISTS (SELECT L.CISLO_LIEKU FROM LIEK L WHERE L.CISLO_LIEKU = N.LIEK_ID AND L.CENA > 3.00)
@@ -343,7 +343,7 @@ DROP INDEX sucast_index;
 
 -- procedúra (1/2) zistí koľko percent liekov na sklade "sklad_id_arg" je
 -- z celkového počtu liekov vo všetkých skladoch
--- v prípade že nie je žiaden liek na sklade vypíše chybu
+-- v prípade, že nie je žiaden liek na sklade vypíše chybu
 CREATE OR REPLACE PROCEDURE percenta_lieku_z_kapacity(sklad_id_arg in int) AS
 BEGIN
     DECLARE CURSOR cursor_lieky is
@@ -385,44 +385,61 @@ CALL percenta_lieku_z_kapacity(3);
 
 
 -- procedúra (2/2)
---NEVIEM JU NAPISAT LEBO SOM KOKOKOKOKOT
+-- procedúra vypíše dostupnú kapacitu vo všetkých skladoch,
+-- v prípade, že nejaký sklad je plný,
+-- to znamená že má dostupnú kapacitu 0, tak skončí s chybou
 CREATE OR REPLACE PROCEDURE volne_miesto_v_sklade AS
-    lieky_na_sklade NUMBER;
-    kapacita_skladu NUMBER;
-    final_id NUMBER;
-    DECLARE CURSOR sklad_id is SELECT S.ID_SKLADU FROM SKLAD S;
-        BEGIN
-            OPEN sklad_id;
-            LOOP
-                FETCH sklad_id INTO final_id;
-                EXIT WHEN sklad_id%NOTFOUND;
+BEGIN
+    DECLARE CURSOR cursor_sklad is
+        SELECT S.ID_SKLADU, S.MNOZSTVO_TOVARU_NA_SKLADE, S.KAPACITA
+        FROM SKLAD S;
+            id_skladu SKLAD.ID_SKLADU%TYPE;
+            mnozstvo_tovaru SKLAD.MNOZSTVO_TOVARU_NA_SKLADE%TYPE;
+            kapacita_skladu SKLAD.KAPACITA%TYPE;
+            dostupna_kapacita NUMBER;
+            BEGIN
+                dostupna_kapacita := 0;
+                OPEN cursor_sklad;
+                LOOP
+                    FETCH cursor_sklad INTO id_skladu, mnozstvo_tovaru, kapacita_skladu;
+                    EXIT WHEN cursor_sklad%NOTFOUND;
+                    dostupna_kapacita := kapacita_skladu - mnozstvo_tovaru;
+                    EXIT WHEN dostupna_kapacita = 0;
+                    DBMS_OUTPUT.put_line('DOSTUPNÁ KAPACITA SKLADU ID: ' || id_skladu || ' je: ' || dostupna_kapacita);
+                END LOOP;
+                CLOSE cursor_sklad;
+                IF dostupna_kapacita = 0 THEN
+                    RAISE_APPLICATION_ERROR(-20000, 'Na sklade: ' || id_skladu ||' nie je dostupná kapacita');
+                END IF;
+            END;
+END;
+/
 
-            end loop;
-        end;
+CALL volne_miesto_v_sklade();
 
 ------------------------------------- MATERIALIZED VIEW -----------------
--- vypise zoznam lekarni a k nim priradeny sklad
-
+-- vypíše zoznam miest v ktorých sa nachádza lekáreň a ich počet
 DROP MATERIALIZED VIEW sklady_lekarni;
+
+CREATE MATERIALIZED VIEW LOG ON LEKAREN WITH PRIMARY KEY, ROWID(MESTO) INCLUDING NEW VALUES;
 CREATE MATERIALIZED VIEW sklady_lekarni
-CACHE BUILD IMMEDIATE
-REFRESH ON COMMIT AS
-SELECT XORAVE05.LEKAREN.ID_LEKARNE AS lekaren, XORAVE05.LEKAREN.ULICA as ulica, XORAVE05.LEKAREN.MESTO as mesto,
-XORAVE05.SKLAD.ID_SKLADU as sklad
-FROM XORAVE05.LEKAREN JOIN XORAVE05.SKLAD ON XORAVE05.LEKAREN.ID_LEKARNE = XORAVE05.SKLAD.ID_SKLADU
-GROUP BY XORAVE05.LEKAREN.ID_LEKARNE, XORAVE05.LEKAREN.ULICA, XORAVE05.LEKAREN.MESTO, XORAVE05.SKLAD.ID_SKLADU;
+CACHE
+BUILD IMMEDIATE
+REFRESH ON COMMIT -- pri commite sa obnovia dáta materialzed view
+ENABLE QUERY REWRITE AS SELECT L.MESTO, COUNT(L.MESTO) as pocet_miest -- umožňuje prepis view
+FROM LEKAREN L
+GROUP BY L.MESTO;
 
--- predvedenie:
+SELECT * FROM sklady_lekarni;
+INSERT INTO LEKAREN(ID_LEKARNE, ULICA, SUPISNE_CISLO, ORIENTACNE_CISLO, PSC, MESTO, TELEFONNE_CISLO, DATUM_INVENTURY,SKLAD_ID) VALUES(4,'Antonínska', 2135, 2, 01001, 'Žilina','+421901961271',TO_DATE('01.03.2020', 'dd.mm.yyyy'),1);
 
-SELECT * FROM sklady_lekarni;  -- materializovany pohlad
-UPDATE LEKAREN SET MESTO = 'Brno' WHERE ID_LEKARNE = 1;
-SELECT * FROM sklady_lekarni;   -- stale nezmeneny materializovany pohlad
 COMMIT;
-SELECT * FROM sklady_lekarni;  -- tu by to malo byt zmenene
+
+-- Materialized view, mal by vypísať mesto Žilina s hodnotou 2
+SELECT * FROM sklady_lekarni;
 
 
-
-------------------------------------- PRIVILEGIA ------------------------
+------------------------------------- PRIVILÉGIA ------------------------
 
 GRANT ALL ON LEKAREN                     TO xbobos00;
 GRANT ALL ON VYKAZ                       TO xbobos00;
