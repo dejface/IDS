@@ -254,7 +254,7 @@ SELECT ID_POISTOVNE, NAZOV  FROM ZDRAVOTNA_POISTOVNA
 ORDER BY ID_POISTOVNE;
 
 -- Predvedenie triggeru 2
---Pri pokuse o vloženie položky do tabuľky liek sa vyhodí application error kvoli lieku po expiracií
+--Pri pokuse o vloženie položky do tabuľky liek sa vyhodí application error kvôli lieku po expiracií
 --INSERT INTO LIEK(NAZOV, CENA, DENNA_DAVKA, UCINNA_LATKA, EXPIRACIA, VEDLAJSIE_UCINKY) VALUES ('Šumivé tablety',2.99,'1 šumivá tableta denne','horčík a vitamín B6',TO_DATE('20.03.2019','dd.mm.yyyy'),'laxatívne účinky');
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -264,12 +264,12 @@ ORDER BY ID_POISTOVNE;
 --2x JOIN 2 TABLES
 --Zobrazí všetky lekárne, ktoré majú zmluvu so zdravotnou poistovňou UNION
 SELECT *
-  from LEKAREN NATURAL JOIN ZDRAVOTNA_POISTOVNA
+  FROM LEKAREN NATURAL JOIN ZDRAVOTNA_POISTOVNA
   WHERE  NAZOV = 'UNION';
 
---Zobrazi lieky a vysky doplatkov na liek ktore hradi poistovna VSZP
+--Zobrazí lieky a výšky doplatkov na liek, ktoré hradí poistovňa VŠZP
 SELECT DISTINCT ID_LIEK, VYSKA_DOPLATKU
-  from ZDRAVOTNA_POISTOVNA NATURAL JOIN HRADI_DOPLATOK
+  FROM ZDRAVOTNA_POISTOVNA NATURAL JOIN HRADI_DOPLATOK
   WHERE  POISTOVNA = 1;
 
 --1x JOIN 3 TABLES
@@ -323,7 +323,6 @@ GROUP BY NAKUP.DATUM_PREDAJA, NAKUP.LEKAREN;
 SELECT PLAN_TABLE_OUTPUT FROM TABLE(DBMS_XPLAN.DISPLAY());
 
 -- vytváranie indexov pre najčastejšie používané tabuľky
--- !!!ALERT!!!!, neviem či znížená réžia stačí a či som ich zvolil správne, keď tak daj na to look
 CREATE INDEX liek_index ON LIEK (CISLO_LIEKU, CENA);
 CREATE INDEX sucast_index ON SUCAST_NAKUPU (ID_TABLE, NAKUP_ID, LIEK_ID);
 
