@@ -325,6 +325,7 @@ SELECT PLAN_TABLE_OUTPUT FROM TABLE(DBMS_XPLAN.DISPLAY());
 -- vytváranie indexov pre najčastejšie používané tabuľky
 CREATE INDEX liek_index ON LIEK (CISLO_LIEKU, CENA);
 CREATE INDEX sucast_index ON SUCAST_NAKUPU (ID_TABLE, NAKUP_ID, LIEK_ID);
+CREATE INDEX nakup_index ON NAKUP (CISLO_POKLADNICNEHO_BLOKU, DATUM_PREDAJA, LEKAREN);
 
 -- second run s použitím indexov
 EXPLAIN PLAN FOR
@@ -337,6 +338,7 @@ GROUP BY NAKUP.DATUM_PREDAJA, NAKUP.LEKAREN;
 SELECT PLAN_TABLE_OUTPUT FROM TABLE(DBMS_XPLAN.DISPLAY());
 DROP INDEX liek_index;
 DROP INDEX sucast_index;
+DROP INDEX nakup_index;
 
 -----------------------------------------------PROCEDURES------------------------------------
 
